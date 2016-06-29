@@ -1,0 +1,19 @@
+{
+  "name": "bookie",
+  "version": "1.0.0",
+  "description": "A Slack bot to facilitate placing bets on GA A/B tests",
+  "main": "server.js",
+  "scripts": {
+    "start": "npm server.js"
+  },
+  "keywords": [
+    "botkit"
+  ],
+  "author": "Bryan Berger",
+  "license": "ISC",
+  "dependencies": {
+    "botkit": "^0.2.0",
+    "node-uuid": "^1.4.7"
+  },
+  "devDependencies": {}
+}
