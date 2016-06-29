@@ -6,6 +6,8 @@ var Botkit  = require('botkit'),
          fs = require('fs'),
        uuid = require('node-uuid');
 
+require('dotenv').config();
+
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
     process.exit(1);
@@ -18,7 +20,8 @@ var controller = Botkit.slackbot({
 
 var usernames = {};
 
-var admin = 'U0E8J127R';
+//Bryan, Zack, Anna, Graham
+var admin = ['U0E8J127R','U0HNWMZJ7', 'U06BVLK8F'];
 
 var race = {
   id: uuid.v4(),
@@ -262,27 +265,45 @@ controller.hears(['races'],
 */
 
 controller.hears(['cq'],
-'direct_message,direct_mention,mention', function(bot, message) {
-  if(message.user !== admin)
-    return;
-
-  controller.storage.users.all(function(err, all_user_data) {
-    all_user_data.forEach(function(user_data) {
-      if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
-        delete user_data.wager;
-
-        controller.storage.users.save(user_data, function(err) {
-          if(!err) {
-            bot.reply(message, 'Cleared Queue.');
+  'direct_message,direct_mention,mention', function(bot, message) {
+    if(admin.indexOf(message.user) === -1){
+      return;
+    }
+    controller.storage.users.all(function(err, all_user_data) {
+      var user_promises = all_user_data.map(function(user_data) {
+        return new Promise((resolve, reject) => {
+          if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
+            delete user_data.wager
+            resolve(true)
           } else {
-            bot.botkit.log('Failed to clear the queue', err);
+            resolve(false)
           }
-        });
-      } else {
-        bot.reply(message, 'Queue is already cleared...');
-      }
+        })
+      });
+      Promise.all(user_promises).then((results) => {
+        if(results.indexOf(true) > -1) {
+          bot.reply(message, 'Cleared Queue.');
+        } else {
+          bot.reply(message, 'Queue is already cleared...');
+        }
+      }).catch((error) => {
+        bot.botkit.log('Failed to clear the queue', err);
+      })
+      // if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
+      //   delete user_data.wager;
+
+      //   controller.storage.users.save(user_data, function(err) {
+      //     if(!err) {
+      //       bot.reply(message, 'Cleared Queue.');
+      //     } else {
+      //       bot.botkit.log('Failed to clear the queue', err);
+      //     }
+      //   });
+      // } else {
+      //   bot.reply(message, 'Queue is already cleared...');
+      // }
+
     });
-  });
 });
 
 controller.hears(['thanks', 'ty', 'thx'],
@@ -300,7 +321,7 @@ controller.hears(['thanks', 'ty', 'thx'],
 
 controller.hears(['start'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(message.user === admin) {
+  if(admin.indexOf(message.user) !== -1) {
     race.active = true;
     calculateOdds(); // initial
     bot.reply(message, 'I\'m open for business, all bets are final. Place your bets!');
@@ -309,7 +330,7 @@ controller.hears(['start'],
 
 controller.hears(['stop'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(message.user === admin) {
+  if(admin.indexOf(message.user) !== -1) {
     race.active = false;
     bot.reply(message, 'Sorry, I\'m closed for business, no more bets...');
   }
@@ -317,7 +338,7 @@ controller.hears(['stop'],
 
 controller.hears(['payout'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(message.user === admin) {
+  if(admin.indexOf(message.user) !== -1) {
     payOut();
   }
 });
