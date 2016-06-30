@@ -44,6 +44,12 @@ Odds	$2 Payoff	Odds	$2 Payoff	Odds	$2 Payoff
 7/5	$4.80	5/1	$12.00	15/1	$32.00
 3/2	$5.00	6/1	$14.00	16/1	$34.00
 
+1. Start with the total amount bet to place and subtract 15 percent for the takeout (the percentage withheld from the betting pool by the host track).
+2. From that total, subtract the place money wagered on your horse and the highest amount of place money bet on another horse to get the profit from the place pool.
+3. Split the profit amount between the two place horses.
+4. Divide that amount by the number of $2 place bets on your horse.
+5. Add $2, and you get your estimate place price.
+
 # Close the pool
 - Determine a time before the race starts to accept no more bets
 - final odds and payouts can be calculated
