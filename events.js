@@ -53,8 +53,8 @@ Events.calculateOdds = function() {
       return;
     }
 
-    var reducedFraction = Helpers.reduceFraction(Math.floor(runner.odds * race.runners.length), race.runners.length);
     runner.odds = (race.totalPool - (race.totalPool * race.tax)) / runner.pool;
+    var reducedFraction = Helpers.reduceFraction(Math.floor(runner.odds * race.runners.length), race.runners.length);
     runner.oddsFraction = reducedFraction[0] + '/' + reducedFraction[1];
   });
 }
@@ -123,5 +123,3 @@ Events.replyWithOdds = function(message) {
       BotkitController.bot.botkit.log('Failed to calculateOdds', err);
   });
 }
-
-
