@@ -289,19 +289,6 @@ controller.hears(['cq'],
       }).catch((error) => {
         bot.botkit.log('Failed to clear the queue', err);
       })
-      // if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
-      //   delete user_data.wager;
-
-      //   controller.storage.users.save(user_data, function(err) {
-      //     if(!err) {
-      //       bot.reply(message, 'Cleared Queue.');
-      //     } else {
-      //       bot.botkit.log('Failed to clear the queue', err);
-      //     }
-      //   });
-      // } else {
-      //   bot.reply(message, 'Queue is already cleared...');
-      // }
 
     });
 });
