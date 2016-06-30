@@ -101,21 +101,69 @@ const BookieDB = {
         })
       )
     }
-  }
-  // horse: {
-  //   // Returns one horse by id
-  //   find(id) => {}
-  //   // Returns all horses in DB
-  //   all() => {}
-  // },
-  // race: {
-  //   // returns bets for this race
-  //   bets(race_id) => {}
-  //   // Returns a list of horses and their betting odds
-  //   odds(race_id) => {}
+  },
+  runner: {
+    // Returns one horse by id
+    find: function find(id) {
+      return(
+        new Promise((resolve, reject) => {
+          const user = db.runners.find(id, (err, user) => {
+            if (user) {
+              resolve(user)
+            } else {
+              reject({error: 'User not found.'})
+            }
+          })
+        })
+      )
+    },
+    // Returns all horses in DB
+    all: function all() => {
+      return(
+        new Promise((resolve, reject) => {
+          db.runners.find((err, results) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(results)
+            }
+          })
+        })
+      )
+    }
+  },
+  race: {
+    // returns bets for this race
+    wagers: function wagers(race_id) {
+      return(
+        new Promise((resolve, reject) => {
+          db.bets_by_race.find([race_id], (err, results) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(results)
+            }
+          })
+        })
+      )
+    },
+    // Returns a list of horses and their betting odds
+    odds: function odds(race_id) {
+      return(
+        new Promise((resolve, reject) => {
+          db.odds([race_id], (err, results) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(results)
+            }
+          })
+        })
+      )
+    },
 
-  //   create(race_name, all_the_pretty_horses) => {}
-  // },
+    create: function create(race_name, all_the_pretty_horses) {}
+  },
   // bet: {
   //   // Adds a new bet!
   //   create(bet_params) => {}
