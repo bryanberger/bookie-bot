@@ -4,7 +4,8 @@ var Botkit  = require('botkit'),
         os  = require('os'),
       path  = require('path'),
          fs = require('fs'),
-       uuid = require('node-uuid');
+       uuid = require('node-uuid'),
+    Helpers = require('./helpers');
 
 require('dotenv').config();
 
@@ -84,7 +85,7 @@ function calculateOdds() {
       return;
     }
 
-    var reducedFraction = reduceFraction(Math.floor(runner.odds * race.runners.length), race.runners.length);
+    var reducedFraction = Helpers.reduceFraction(Math.floor(runner.odds * race.runners.length), race.runners.length);
     runner.odds = (race.totalPool - (race.totalPool * race.tax)) / runner.pool;
     runner.oddsFraction = reducedFraction[0] + '/' + reducedFraction[1];
   });
@@ -128,15 +129,6 @@ function payOut() {
     });
 
   }
-}
-
-function reduceFraction(numerator, denominator) {
-  var gcd = function gcd(a,b) {
-    return b ? gcd(b, a%b) : a;
-  };
-
-  gcd = gcd(numerator,denominator);
-  return [numerator/gcd, denominator/gcd];
 }
 
 // “$2 to win on #4.”
@@ -376,25 +368,7 @@ controller.hears(['help'],
 controller.hears(['uptime','identify yourself','who are you','what is your name'],
 'direct_message,direct_mention,mention',function(bot, message) {
     var hostname = os.hostname();
-    var uptime = formatUptime(process.uptime());
+    var uptime = Helpers.formatUptime(process.uptime());
 
     bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
 });
-
-function formatUptime(uptime) {
-    var unit = 'second';
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'minute';
-    }
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'hour';
-    }
-    if (uptime != 1) {
-        unit = unit + 's';
-    }
-
-    uptime = uptime + ' ' + unit;
-    return uptime;
-}
