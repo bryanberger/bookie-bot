@@ -14,8 +14,9 @@
   "dependencies": {
     "botkit": "^0.2.2",
     "dotenv": "^2.0.0",
-    "node-uuid": "^1.4.7",
-    "request": "^2.72.0"
+    "request": "^2.72.0",
+    "massive": "^2.3.0",
+    "node-uuid": "^1.4.7"
   },
   "devDependencies": {}
 }
