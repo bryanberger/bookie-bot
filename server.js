@@ -21,20 +21,19 @@ var controller = Botkit.slackbot({
 var usernames = {};
 
 //Bryan, Zack, Anna, Graham
-var admin = ['U0E8J127R','U0HNWMZJ7', 'U06BVLK8F'];
+var admin = ['U0E8J127R', 'U0HNWMZJ7', 'U06BVLK8F'];
 
 var race = {
   id: uuid.v4(),
   tax: 0.10, // 10% goes to the house :)
-  winners: [-1, -1, -1],
+  winner_id: -1,
   totalPool: 0,
   active: false,
   runners: [
     {id: 0, name: 'Secretariat', color: '#7ED321', odds: 0, oddsFraction: 0, pool: 0},
     {id: 1, name: 'Man O\' War', color: '#4A90E2', odds: 0, oddsFraction: 0, pool: 0},
     {id: 2, name: 'Seabiscuit', color: '#D52B3F', odds: 0, oddsFraction: 0, pool: 0},
-    {id: 3, name: 'Ruffian', color: '#9641E1', odds: 0, oddsFraction: 0, pool: 0},
-    {id: 4, name: 'Seattle Slew', color: '#EA8114', odds: 0, oddsFraction: 0, pool: 0}
+    {id: 3, name: 'Ruffian', color: '#9641E1', odds: 0, oddsFraction: 0, pool: 0}
   ]
 };
 
@@ -56,6 +55,11 @@ var bot = controller.spawn({
     }
   });
 });
+
+//function checks to see if user is admin
+function isAdmin(message) {
+  return admin.indexOf(message.user) !== -1;
+}
 
 // @ http://www.wisegeek.com/how-do-they-determine-horse-racing-odds.htm
 function placeBet(wager) {
@@ -81,7 +85,7 @@ function calculateOdds() {
     // taxedPool / amount staked on horse = dividend per dollar bet
     if(runner.pool === 0) {
       runner.odds = 0;
-      runner.oddsFraction = '0/5';
+      runner.oddsFraction = '0/' + race.runners.length;
 
       return;
     }
@@ -93,10 +97,14 @@ function calculateOdds() {
 
 function payOut() {
   // TESTING
-  race.winners = [0, 1, 2];
+  race.winner_id = 0;
+
+  console.log(race);
 
   // if the race is no longer active, there is a pool, and winners
-  if(!race.active && race.totalPool > 0 && race.winners[0] > -1) {
+  if(!race.active && race.totalPool > 0 && race.winner_id > -1) {
+
+    console.log('active race with a pool');
 
     // loop over every player
     controller.storage.users.all(function(err, all_user_data) {
@@ -107,27 +115,14 @@ function payOut() {
           var wager = user_data.wager;
           var payout = 0;
 
-          switch(wager.type) {
-            case 'win':
-              if(wager.runner_id === race.winners[0]) {
-                payout = (race.runners[wager.runner_id].odds * wager.amount) + wager.amount;
-              }
-            break;
-
-            case 'place':
-              payout = 0;
-              //payout = (race.totalPool - (race.totalPool * race.tax)) - race.runners
-            break;
-
-            case 'show':
-              payout = 0;
-            break;
+          if(wager.runner_id === race.winner_id) {
+            payout = (race.runners[wager.runner_id].odds * wager.amount) + wager.amount;
           }
 
           // deduct the payout from the payout pool
           race.totalPool -= payout;
 
-          console.log(usernames[user_data.id], payout);
+          console.log(user_data.username, payout);
 
           // add the payout back to this user's object
 
@@ -162,16 +157,16 @@ function payOut() {
 // 4,00.00 on horse 15 to place
 controller.hears(
 [
-    '\\$?(\\d+) to (win|place|show) on \\#?(\\d+)',
+    '\\$?(\\d+) on \\#?(\\d+)',
     // '(\\$?\\d+|\\d{1,3},\\d{3})(\\.\\d+)? on (horse|runner)? \\#?(\\d+) to (win|place|show)'
 ],
 'direct_message,direct_mention,mention', function(bot, message) {
     var username    = usernames[message.user];
     var wagerAmount = parseInt(message.match[1].replace(/\\$|,/g,''));
-    var wagerType   = message.match[2];
-    var runnerId    = parseInt(message.match[3]);
+    //var wagerType   = message.match[2];
+    var runnerId    = parseInt(message.match[2]);
 
-    console.log(username, wagerAmount, wagerType, runnerId);
+    console.log(username, wagerAmount, runnerId);
 
     // race should be active
     if(!race.active) {
@@ -185,23 +180,29 @@ controller.hears(
       return;
     }
 
+    if(race.runners.indexOf(runnerId-1) === -1) {
+      bot.reply(message, 'Please choose a valid runner');
+      replyWithOdds(message);
+      return;
+    }
+
     controller.storage.users.get(message.user, function(err, user_data) {
       var wager = {};
 
       if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
         wager = user_data.wager;
-        bot.reply(message, ':x: <@' + username + '> You\'ve already bet: ```$' + wager.amount + ' on the #' + (wager.runner_id+1) + ' horse to ' + wager.type + '.```');
+        bot.reply(message, ':x: <@' + username + '> You\'ve already bet: ```$' + wager.amount + ' on the #' + (wager.runner_id+1) + ' horse to win.```');
       } else {
         wager = {
           "race_id": race.id,
           "runner_id": runnerId-1,
-          "type": wagerType,
           "amount": wagerAmount
         }
 
         controller.storage.users.save(
           {
             id: message.user,
+            username: username,
             wager: wager
           }, function(err) {
             placeBet(wager);
@@ -237,7 +238,7 @@ controller.hears(['can i place a bet', 'can i place a bet?', 'can i bet', 'can i
 
     if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
       var wager = user_data.wager;
-      bot.reply(message, ':x: <@' + username + '> You\'ve already bet: ```$' + wager.amount + ' on the #' + (wager.runner_id+1)+ ' horse to ' + wager.type + '.```');
+      bot.reply(message, ':x: <@' + username + '> You\'ve already bet: ```$' + wager.amount + ' on the #' + (wager.runner_id+1)+ ' horse to win.```');
     } else {
       bot.reply(message, ':white_check_mark: Yes, <@' + username + '> I\'m taking bets!');
     }
@@ -266,15 +267,21 @@ controller.hears(['races'],
 
 controller.hears(['cq'],
   'direct_message,direct_mention,mention', function(bot, message) {
-    if(admin.indexOf(message.user) === -1){
+    if(!isAdmin(message)){
       return;
     }
     controller.storage.users.all(function(err, all_user_data) {
       var user_promises = all_user_data.map(function(user_data) {
         return new Promise((resolve, reject) => {
           if('undefined' !== typeof user_data && user_data.hasOwnProperty('wager')) {
-            delete user_data.wager
-            resolve(true)
+            delete user_data.wager;
+            controller.storage.users.save(user_data, function(err) {
+              if(!err) {
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            })
           } else {
             resolve(false)
           }
@@ -306,18 +313,18 @@ controller.hears(['thanks', 'ty', 'thx'],
   });
 });
 
-controller.hears(['start'],
+controller.hears(['open'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(admin.indexOf(message.user) !== -1) {
+  if(isAdmin(message)) {
     race.active = true;
     calculateOdds(); // initial
     bot.reply(message, 'I\'m open for business, all bets are final. Place your bets!');
   }
 });
 
-controller.hears(['stop'],
+controller.hears(['close'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(admin.indexOf(message.user) !== -1) {
+  if(isAdmin(message)) {
     race.active = false;
     bot.reply(message, 'Sorry, I\'m closed for business, no more bets...');
   }
@@ -325,7 +332,7 @@ controller.hears(['stop'],
 
 controller.hears(['payout'],
 'direct_message,direct_mention,mention',function(bot, message) {
-  if(admin.indexOf(message.user) !== -1) {
+  if(isAdmin(message)) {
     payOut();
   }
 });
