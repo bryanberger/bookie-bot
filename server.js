@@ -79,19 +79,14 @@ function placeBet(wager) {
 function calculateOdds() {
   race.runners.forEach(function(runner) {
 
-    // calculate the odds in decimal and whole ratio (round down)
-    // runner.odds = (race.totaPool - runner.pool) / runner.pool;
-
-    // taxedPool / amount staked on horse = dividend per dollar bet
     if(runner.pool === 0) {
-      runner.odds = 0;
-      runner.oddsFraction = '0/' + race.runners.length;
-
+      runner.odds = runner.oddsFraction = 0;
       return;
     }
 
+    var reducedFraction = reduceFraction(Math.floor(runner.odds * race.runners.length), race.runners.length);
     runner.odds = (race.totalPool - (race.totalPool * race.tax)) / runner.pool;
-    runner.oddsFraction = (Math.floor(runner.odds * race.runners.length)) + '/' + race.runners.length;
+    runner.oddsFraction = reducedFraction[0] + '/' + reducedFraction[1];
   });
 }
 
@@ -127,15 +122,6 @@ function payOut() {
           // add the payout back to this user's object
 
           // notify the user of their earnings if > 0
-
-
-// 1. Start with the total amount bet to place and subtract 15 percent for the takeout (the percentage withheld from the betting pool by the host track).
-// 2. From that total, subtract the place money wagered on your horse and the highest amount of place money bet on another horse to get the profit from the place pool.
-// 3. Split the profit amount between the two place horses.
-// 4. Divide that amount by the number of $2 place bets on your horse.
-// 5. Add $2, and you get your estimate place price.
-
-
         }
 
       });
@@ -144,13 +130,17 @@ function payOut() {
   }
 }
 
-// var json = JSON.parse(fs.readFileSync('data.json'));
+function reduceFraction(numerator, denominator) {
+  var gcd = function gcd(a,b) {
+    return b ? gcd(b, a%b) : a;
+  };
 
-// https://regex101.com/
-// place a bet for $2 on horse #4 to win
+  gcd = gcd(numerator,denominator);
+  return [numerator/gcd, denominator/gcd];
+}
+
 // “$2 to win on #4.”
 // \$?(\d+) to (win|place|show) on \#?(\d+)
-
 // (\d+|\d{1,3},\d{3})(\.\d+)? on (horse|runner)? \#?(\d+) to (win|place|show)
 // 5,000 on horse #15 to show
 // 4000 on runner #1 to win
@@ -180,7 +170,8 @@ controller.hears(
       return;
     }
 
-    if(race.runners.indexOf(runnerId-1) === -1) {
+    // should be an actual horse
+    if(typeof race.runners[runnerId-1] === 'undefined') {
       bot.reply(message, 'Please choose a valid runner');
       replyWithOdds(message);
       return;
