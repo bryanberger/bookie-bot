@@ -2,6 +2,7 @@
 DROP TABLE IF EXISTS bets;
 DROP TABLE IF EXISTS horses;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS races;
 
 -- Create resources! Woo
 CREATE TABLE users 

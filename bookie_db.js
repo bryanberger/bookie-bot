@@ -11,6 +11,8 @@ export default const BookieDB = {
 		admin() => {}
 		// Inserts a new user into the DB
 		create(user_params) => {}
+		// Sets user's cash money levels
+		set_cash(user_id, amount) => {}
 	},
 	horse: {
 		// Returns one horse by id
