@@ -118,7 +118,7 @@ const BookieDB = {
       )
     },
     // Returns all horses in DB
-    all: function all() => {
+    all: function all() {
       return(
         new Promise((resolve, reject) => {
           db.runners.find((err, results) => {
@@ -162,18 +162,103 @@ const BookieDB = {
       )
     },
 
-    create: function create(race_name, all_the_pretty_horses) {}
+    create: function create(race_name, array_of_horse_names) {
+      return(
+        new Promise((resolve, reject) => {
+          db.races.insert({ name: race_name }, (err, race) => {
+            if (err) { return reject(err) }
+            let newId = race.id
+
+            const colors = ['#7ED321','#4A90E2','#D52B3F','#9641E1']
+
+            newRunners = array_of_horse_names.map((name, index) => { return { race_id: newId ,name: name, color: colors[index]} })
+
+            db.runners.insert(newRunners, (err, results) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(race)
+              }
+            })
+
+          })
+        })
+      )
+    },
+
+    setActiveState: function setActiveState(race_id, boolean) {
+      return(
+        new Promise((resolve, reject) => {
+          db.races.update({ id: race_id, active: boolean}, (err, race) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(race)
+            }
+          })
+        })
+      )
+    }
   },
-  // bet: {
-  //   // Adds a new bet!
-  //   create(bet_params) => {}
-  //   // Returns all bets a user has made
-  //   for_user(user_id) => {}
-  //   // Clears bets for a user
-  //   clear_for_user(user_id) => {}
-  //   // Clears bets for a race
-  //   clear_for_race(race_id) => {}
-  // }
+  wager: {
+    // Adds a new wager!
+    // { amount, runner_id, user_id}
+    create: function create(wager_params) {
+      return(
+        new Promise((resolve, reject) => {
+          db.wagers.insert(wager_params, (err, wager) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(wager)
+            }
+          })
+        })
+      )
+    },
+    // Returns all bets a user has made
+    forUser: function forUser(user_id) {
+      return(
+        new Promise((resolve, reject) => {
+          db.wagers.find({ user_id }, (err, wagers) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(wagers)
+            }
+          })
+        })
+      )
+    },
+    // Clears bets for a user
+    clearForUser: function clearForUser(user_id) {
+      return(
+        new Promise((resolve, reject) => {
+          db.wagers.destroy({ user_id }, function(err, wagers){
+            if (err) {
+              reject(err)
+            } else {
+              resolve(wagers)
+            }
+          })
+        })
+      )
+    },
+    // Clears bets for a race
+    clearForRace: function clearForRace(race_id) {
+      return(
+        new Promise((resolve, reject) => {
+          db.destroy_wagers_for_race([race_id], function(err, wagers){
+            if (err) {
+              reject(err)
+            } else {
+              resolve(wagers)
+            }
+          })
+        })
+      )
+    }
+  }
 }
 
 module.exports = BookieDB
